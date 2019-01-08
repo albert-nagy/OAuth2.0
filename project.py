@@ -178,21 +178,21 @@ def restaurantsJSON():
 @app.route('/restaurant/')
 def showRestaurants():
     restaurants = session.query(Restaurant).order_by(asc(Restaurant.name))
-    return render_template('restaurants.html', restaurants=restaurants)
+    return render_template('restaurants.html', restaurants=restaurants, login_session=login_session)
 
 # Create a new restaurant
 
 
 @app.route('/restaurant/new/', methods=['GET', 'POST'])
 def newRestaurant():
-    if request.method == 'POST':
-        newRestaurant = Restaurant(name=request.form['name'])
-        session.add(newRestaurant)
-        flash('New Restaurant %s Successfully Created' % newRestaurant.name)
-        session.commit()
-        return redirect(url_for('showRestaurants'))
-    else:
-        return render_template('newRestaurant.html')
+	if request.method == 'POST':
+		newRestaurant = Restaurant(name=request.form['name'])
+		session.add(newRestaurant)
+		flash('New Restaurant %s Successfully Created' % newRestaurant.name)
+		session.commit()
+		return redirect(url_for('showRestaurants'))
+	else:
+		return render_template('newRestaurant.html', login_session=login_session)
 
 # Edit a restaurant
 
@@ -207,7 +207,7 @@ def editRestaurant(restaurant_id):
             flash('Restaurant Successfully Edited %s' % editedRestaurant.name)
             return redirect(url_for('showRestaurants'))
     else:
-        return render_template('editRestaurant.html', restaurant=editedRestaurant)
+        return render_template('editRestaurant.html', restaurant=editedRestaurant, login_session=login_session)
 
 
 # Delete a restaurant
@@ -221,7 +221,7 @@ def deleteRestaurant(restaurant_id):
         session.commit()
         return redirect(url_for('showRestaurants', restaurant_id=restaurant_id))
     else:
-        return render_template('deleteRestaurant.html', restaurant=restaurantToDelete)
+        return render_template('deleteRestaurant.html', restaurant=restaurantToDelete, login_session=login_session)
 
 # Show a restaurant menu
 
@@ -232,7 +232,7 @@ def showMenu(restaurant_id):
     restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
     items = session.query(MenuItem).filter_by(
         restaurant_id=restaurant_id).all()
-    return render_template('menu.html', items=items, restaurant=restaurant)
+    return render_template('menu.html', items=items, restaurant=restaurant, login_session=login_session)
 
 
 # Create a new menu item
@@ -247,7 +247,7 @@ def newMenuItem(restaurant_id):
         flash('New Menu %s Item Successfully Created' % (newItem.name))
         return redirect(url_for('showMenu', restaurant_id=restaurant_id))
     else:
-        return render_template('newmenuitem.html', restaurant_id=restaurant_id)
+        return render_template('newmenuitem.html', restaurant_id=restaurant_id, login_session=login_session)
 
 # Edit a menu item
 
@@ -271,7 +271,7 @@ def editMenuItem(restaurant_id, menu_id):
         flash('Menu Item Successfully Edited')
         return redirect(url_for('showMenu', restaurant_id=restaurant_id))
     else:
-        return render_template('editmenuitem.html', restaurant_id=restaurant_id, menu_id=menu_id, item=editedItem)
+        return render_template('editmenuitem.html', restaurant_id=restaurant_id, menu_id=menu_id, item=editedItem, login_session=login_session)
 
 
 # Delete a menu item
@@ -285,7 +285,7 @@ def deleteMenuItem(restaurant_id, menu_id):
         flash('Menu Item Successfully Deleted')
         return redirect(url_for('showMenu', restaurant_id=restaurant_id))
     else:
-        return render_template('deleteMenuItem.html', item=itemToDelete)
+        return render_template('deleteMenuItem.html', item=itemToDelete, login_session=login_session)
 
 
 if __name__ == '__main__':

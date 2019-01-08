@@ -1,9 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
 		<link href='http://fonts.googleapis.com/css?family=Roboto:400,300,700' rel='stylesheet' type='text/css'>
 		<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
 		<link rel=stylesheet type=text/css href="{{ url_for('static', filename='styles.css') }}">
+		<script type="text/javascript">
+function Logout()
+	{
+	page = window.location;
+	$.ajax({
+      type: 'GET',
+      url: '/gdisconnect',
+      success: function(result) {
+      window.location.href = page;}
+		});	
+	}
+		</script>
 	</head>
 	<body>
 		<div class="container">

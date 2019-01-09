@@ -1,12 +1,14 @@
 from flask import Flask, render_template, request, redirect, jsonify, url_for, flash
+
+
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
-from database_setup import Base, Restaurant, MenuItem
+from database_setup import Base, Restaurant, MenuItem, User
+
 from flask import session as login_session
 import random
 import string
 
-# IMPORTS FOR THIS STEP
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 import httplib2
@@ -23,7 +25,7 @@ APPLICATION_NAME = "Restaurant Menu Application"
 
 
 # Connect to Database and create database session
-engine = create_engine('sqlite:///restaurantmenu.db')
+engine = create_engine('sqlite:///restaurantmenuwithusers.db')
 Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
@@ -34,7 +36,7 @@ session = DBSession()
 @app.route('/login')
 def showLogin():
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                    for x in xrange(32))
+                    for x in range(32))
     login_session['state'] = state
     # return "The current session state is %s" % login_session['state']
     return render_template('login.html', STATE=state)
@@ -111,6 +113,12 @@ def gconnect():
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 
+    # see if user exists, if it doesn't make a new one
+    user_id = getUserID(data["email"])
+    if not user_id:
+    	user_id = createUser(login_session)
+    	login_session['user_id'] = user_id
+
     output = ''
     output += '<h1>Welcome, '
     output += login_session['username']
@@ -118,7 +126,7 @@ def gconnect():
     output += '<img src="'
     output += login_session['picture']
     output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-    flash("you are now logged in as %s" % login_session['username'])
+    flash("you are now logged in as {}, your user_id is {}".format(login_session['username'], user_id))
     print "done!"
     return output
 
@@ -151,6 +159,27 @@ def gdisconnect():
 	response = make_response(json.dumps('Current user not connected.'), 401)
 	response.headers['Content-Type'] = 'application/json'
 	return response
+
+def createUser(login_session):
+    newUser = User(name=login_session['username'], email=login_session[
+                   'email'], picture=login_session['picture'])
+    session.add(newUser)
+    session.commit()
+    user = session.query(User).filter_by(email=login_session['email']).one()
+    return user.id
+
+
+def getUserInfo(user_id):
+    user = session.query(User).filter_by(id=user_id).one()
+    return user
+
+
+def getUserID(email):
+    try:
+        user = session.query(User).filter_by(email=email).one()
+        return user.id
+    except:
+        return None
 
 # JSON APIs to view Restaurant Information
 @app.route('/restaurant/<int:restaurant_id>/menu/JSON')
@@ -188,7 +217,8 @@ def newRestaurant():
 	if 'username' not in login_session:
 		return redirect('/login')
 	if request.method == 'POST':
-		newRestaurant = Restaurant(name=request.form['name'])
+		newRestaurant = Restaurant(
+            name=request.form['name'], user_id=login_session['user_id'])
 		session.add(newRestaurant)
 		flash('New Restaurant %s Successfully Created' % newRestaurant.name)
 		session.commit()
@@ -248,8 +278,8 @@ def newMenuItem(restaurant_id):
 		return redirect('/login')
 	restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
 	if request.method == 'POST':
-		newItem = MenuItem(name=request.form['name'], description=request.form[
-                           'description'], price=request.form['price'], course=request.form['course'], restaurant_id=restaurant_id)
+		newItem = MenuItem(name=request.form['name'], description=request.form['description'], price=request.form[
+                           'price'], course=request.form['course'], restaurant_id=restaurant_id, user_id=restaurant.user_id)
 		session.add(newItem)
 		session.commit()
 		flash('New Menu %s Item Successfully Created' % (newItem.name))

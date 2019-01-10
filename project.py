@@ -29,8 +29,6 @@ engine = create_engine('sqlite:///restaurantmenuwithusers.db')
 Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
-session = DBSession()
-
 
 # Create anti-forgery state token
 @app.route('/login')
@@ -161,53 +159,60 @@ def gdisconnect():
 	return response
 
 def createUser(login_session):
-    newUser = User(name=login_session['username'], email=login_session[
+	session = DBSession()
+	newUser = User(name=login_session['username'], email=login_session[
                    'email'], picture=login_session['picture'])
-    session.add(newUser)
-    session.commit()
-    user = session.query(User).filter_by(email=login_session['email']).one()
-    return user.id
+	session.add(newUser)
+	session.commit()
+	user = session.query(User).filter_by(email=login_session['email']).one()
+	return user.id
 
 
 def getUserInfo(user_id):
-    user = session.query(User).filter_by(id=user_id).one()
-    return user
+	session = DBSession()
+	user = session.query(User).filter_by(id=user_id).one()
+	return user
 
 
 def getUserID(email):
-    try:
-        user = session.query(User).filter_by(email=email).one()
-        return user.id
-    except:
-        return None
+	session = DBSession()
+	try:
+		user = session.query(User).filter_by(email=email).one()
+		return user.id
+	except:
+		return None
 
 # JSON APIs to view Restaurant Information
 @app.route('/restaurant/<int:restaurant_id>/menu/JSON')
 def restaurantMenuJSON(restaurant_id):
-    restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
-    items = session.query(MenuItem).filter_by(
+	session = DBSession()
+	restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
+	items = session.query(MenuItem).filter_by(
         restaurant_id=restaurant_id).all()
-    return jsonify(MenuItems=[i.serialize for i in items])
+	return jsonify(MenuItems=[i.serialize for i in items])
 
 
 @app.route('/restaurant/<int:restaurant_id>/menu/<int:menu_id>/JSON')
 def menuItemJSON(restaurant_id, menu_id):
-    Menu_Item = session.query(MenuItem).filter_by(id=menu_id).one()
-    return jsonify(Menu_Item=Menu_Item.serialize)
+	session = DBSession()
+	Menu_Item = session.query(MenuItem).filter_by(id=menu_id).one()
+	return jsonify(Menu_Item=Menu_Item.serialize)
 
 
 @app.route('/restaurant/JSON')
 def restaurantsJSON():
-    restaurants = session.query(Restaurant).all()
-    return jsonify(restaurants=[r.serialize for r in restaurants])
+	session = DBSession()
+	restaurants = session.query(Restaurant).all()
+	return jsonify(restaurants=[r.serialize for r in restaurants])
 
 
 # Show all restaurants
 @app.route('/')
 @app.route('/restaurant/')
 def showRestaurants():
-    restaurants = session.query(Restaurant).order_by(asc(Restaurant.name))
-    return render_template('restaurants.html', restaurants=restaurants, login_session=login_session)
+	session = DBSession()
+	restaurants = session.query(Restaurant).order_by(asc(Restaurant.name))
+	return render_template('restaurants.html', restaurants=restaurants, login_session=login_session)
 
 # Create a new restaurant
 
@@ -216,6 +221,7 @@ def showRestaurants():
 def newRestaurant():
 	if 'username' not in login_session:
 		return redirect('/login')
+	session = DBSession()
 	if request.method == 'POST':
 		newRestaurant = Restaurant(
             name=request.form['name'], user_id=login_session['user_id'])
@@ -233,6 +239,7 @@ def newRestaurant():
 def editRestaurant(restaurant_id):
 	if 'username' not in login_session:
 		return redirect('/login')
+	session = DBSession()
 	editedRestaurant = session.query(
         Restaurant).filter_by(id=restaurant_id).one()
 	creator = getUserInfo(editedRestaurant.user_id)
@@ -254,6 +261,7 @@ def editRestaurant(restaurant_id):
 def deleteRestaurant(restaurant_id):
 	if 'username' not in login_session:
 		return redirect('/login')
+	session = DBSession()
 	restaurantToDelete = session.query(
         Restaurant).filter_by(id=restaurant_id).one()
 	creator = getUserInfo(restaurantToDelete.user_id)
@@ -275,11 +283,12 @@ def deleteRestaurant(restaurant_id):
 @app.route('/restaurant/<int:restaurant_id>/')
 @app.route('/restaurant/<int:restaurant_id>/menu/')
 def showMenu(restaurant_id):
-    restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
-    items = session.query(MenuItem).filter_by(
+	session = DBSession()
+	restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
+	items = session.query(MenuItem).filter_by(
         restaurant_id=restaurant_id).all()
-    creator = getUserInfo(restaurant.user_id)
-    return render_template('menu.html', items=items, restaurant=restaurant, login_session=login_session, creator= creator)
+	creator = getUserInfo(restaurant.user_id)
+	return render_template('menu.html', items=items, restaurant=restaurant, login_session=login_session, creator= creator)
 
 
 # Create a new menu item
@@ -287,6 +296,7 @@ def showMenu(restaurant_id):
 def newMenuItem(restaurant_id):
 	if 'username' not in login_session:
 		return redirect('/login')
+	session = DBSession()
 	restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
 	creator = getUserInfo(restaurant.user_id)
 	if login_session['user_id'] != creator.id:
@@ -310,6 +320,7 @@ def newMenuItem(restaurant_id):
 def editMenuItem(restaurant_id, menu_id):
 	if 'username' not in login_session:
 		return redirect('/login')
+	session = DBSession()
 	editedItem = session.query(MenuItem).filter_by(id=menu_id).one()
 	restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
 	creator = getUserInfo(restaurant.user_id)
@@ -339,6 +350,7 @@ def editMenuItem(restaurant_id, menu_id):
 def deleteMenuItem(restaurant_id, menu_id):
 	if 'username' not in login_session:
 		return redirect('/login')
+	session = DBSession()
 	restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
 	creator = getUserInfo(restaurant.user_id)
 	if login_session['user_id'] != creator.id:

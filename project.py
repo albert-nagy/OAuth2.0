@@ -106,8 +106,10 @@ def gconnect():
     answer = requests.get(userinfo_url, params=params)
 
     data = answer.json()
-
-    login_session['username'] = data['name']
+    try:
+    	login_session['username'] = data['name']
+    except KeyError:
+    	login_session['username'] = data['email']
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 

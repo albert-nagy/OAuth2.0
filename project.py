@@ -168,19 +168,22 @@ def createUser(login_session):
 	session.add(newUser)
 	session.commit()
 	user = session.query(User).filter_by(email=login_session['email']).one()
+	session.close()
 	return user.id
 
 
 def getUserInfo(user_id):
 	session = DBSession()
 	user = session.query(User).filter_by(id=user_id).one()
+	session.close()
 	return user
 
 
 def getUserID(email):
-	session = DBSession()
 	try:
+		session = DBSession()
 		user = session.query(User).filter_by(email=email).one()
+		session.close()
 		return user.id
 	except:
 		return None
@@ -192,6 +195,7 @@ def restaurantMenuJSON(restaurant_id):
 	restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
 	items = session.query(MenuItem).filter_by(
         restaurant_id=restaurant_id).all()
+	session.close()
 	return jsonify(MenuItems=[i.serialize for i in items])
 
 
@@ -199,6 +203,7 @@ def restaurantMenuJSON(restaurant_id):
 def menuItemJSON(restaurant_id, menu_id):
 	session = DBSession()
 	Menu_Item = session.query(MenuItem).filter_by(id=menu_id).one()
+	session.close()
 	return jsonify(Menu_Item=Menu_Item.serialize)
 
 
@@ -206,6 +211,7 @@ def menuItemJSON(restaurant_id, menu_id):
 def restaurantsJSON():
 	session = DBSession()
 	restaurants = session.query(Restaurant).all()
+	session.close()
 	return jsonify(restaurants=[r.serialize for r in restaurants])
 
 
@@ -215,6 +221,7 @@ def restaurantsJSON():
 def showRestaurants():
 	session = DBSession()
 	restaurants = session.query(Restaurant).order_by(asc(Restaurant.name))
+	session.close()
 	return render_template('restaurants.html', restaurants=restaurants, login_session=login_session)
 
 # Create a new restaurant
@@ -231,6 +238,7 @@ def newRestaurant():
 		session.add(newRestaurant)
 		flash('New Restaurant %s Successfully Created' % newRestaurant.name)
 		session.commit()
+		session.close()
 		return redirect(url_for('showRestaurants'))
 	else:
 		return render_template('newRestaurant.html', login_session=login_session)
@@ -245,8 +253,10 @@ def editRestaurant(restaurant_id):
 	session = DBSession()
 	editedRestaurant = session.query(
         Restaurant).filter_by(id=restaurant_id).one()
+	session.close()
 	creator = getUserInfo(editedRestaurant.user_id)
 	if login_session['user_id'] != creator.id:
+		session.close()
 		return """<script>function myFunction() 
 		{alert('You are not authorized to edit this restaurant. You can edit only restaurants you created');}
 		</script><body onload='myFunction()''>"""
@@ -269,6 +279,7 @@ def deleteRestaurant(restaurant_id):
         Restaurant).filter_by(id=restaurant_id).one()
 	creator = getUserInfo(restaurantToDelete.user_id)
 	if login_session['user_id'] != creator.id:
+		session.close()
 		return """<script>function myFunction() 
 		{alert('You are not authorized to delete this restaurant. You can delete only restaurants you created');}
 		</script><body onload='myFunction()''>"""
@@ -276,8 +287,10 @@ def deleteRestaurant(restaurant_id):
 		session.delete(restaurantToDelete)
 		flash('%s Successfully Deleted' % restaurantToDelete.name)
 		session.commit()
+		session.close()
 		return redirect(url_for('showRestaurants', restaurant_id=restaurant_id))
 	else:
+		session.close()
 		return render_template('deleteRestaurant.html', restaurant=restaurantToDelete, login_session=login_session)
 
 # Show a restaurant menu
@@ -290,6 +303,7 @@ def showMenu(restaurant_id):
 	restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
 	items = session.query(MenuItem).filter_by(
         restaurant_id=restaurant_id).all()
+	session.close()
 	creator = getUserInfo(restaurant.user_id)
 	return render_template('menu.html', items=items, restaurant=restaurant, login_session=login_session, creator= creator)
 
@@ -303,6 +317,7 @@ def newMenuItem(restaurant_id):
 	restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
 	creator = getUserInfo(restaurant.user_id)
 	if login_session['user_id'] != creator.id:
+		session.close()
 		return """<script>function myFunction() 
 		{alert('You are not authorized to add a menu item for this restaurant. You can add only menu items for restaurants you created');}
 		</script><body onload='myFunction()''>"""
@@ -311,9 +326,11 @@ def newMenuItem(restaurant_id):
                            'price'], course=request.form['course'], restaurant_id=restaurant_id, user_id=restaurant.user_id)
 		session.add(newItem)
 		session.commit()
+		session.close()
 		flash('New Menu %s Item Successfully Created' % (newItem.name))
 		return redirect(url_for('showMenu', restaurant_id=restaurant_id))
 	else:
+		session.close()
 		return render_template('newmenuitem.html', restaurant_id=restaurant_id, login_session=login_session)
 
 # Edit a menu item
@@ -328,6 +345,7 @@ def editMenuItem(restaurant_id, menu_id):
 	restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
 	creator = getUserInfo(restaurant.user_id)
 	if login_session['user_id'] != creator.id:
+		session.close()
 		return """<script>function myFunction() 
 		{alert('You are not authorized to edit a menu item in this restaurant. You can edit only menu items of restaurants you created');}
 		</script><body onload='myFunction()''>"""
@@ -342,9 +360,11 @@ def editMenuItem(restaurant_id, menu_id):
 			editedItem.course = request.form['course']
 		session.add(editedItem)
 		session.commit()
+		session.close()
 		flash('Menu Item Successfully Edited')
 		return redirect(url_for('showMenu', restaurant_id=restaurant_id))
 	else:
+		session.close()
 		return render_template('editmenuitem.html', restaurant_id=restaurant_id, menu_id=menu_id, item=editedItem, login_session=login_session)
 
 
@@ -357,6 +377,7 @@ def deleteMenuItem(restaurant_id, menu_id):
 	restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
 	creator = getUserInfo(restaurant.user_id)
 	if login_session['user_id'] != creator.id:
+		session.close()
 		return """<script>function myFunction() 
 		{alert('You are not authorized to delete a menu item in this restaurant. You can delete only menu items of restaurants you created');}
 		</script><body onload='myFunction()''>"""
@@ -364,9 +385,11 @@ def deleteMenuItem(restaurant_id, menu_id):
 	if request.method == 'POST':
 		session.delete(itemToDelete)
 		session.commit()
+		session.close()
 		flash('Menu Item Successfully Deleted')
 		return redirect(url_for('showMenu', restaurant_id=restaurant_id))
 	else:
+		session.close()
 		return render_template('deletemenuitem.html', item=itemToDelete, login_session=login_session)
 
 

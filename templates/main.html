@@ -11,7 +11,7 @@ function Logout()
 	page = window.location;
 	$.ajax({
       type: 'GET',
-      url: '/gdisconnect',
+      url: '/disconnect',
       success: function(result) {
       window.location.href = page;}
 		});	

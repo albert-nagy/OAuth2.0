@@ -20,7 +20,7 @@ app = Flask(__name__)
 
 
 CLIENT_ID = json.loads(
-    open('client_secrets.json', 'r').read())['web']['client_id']
+    open('client_secret_945722933121-lbkncbgj0sht96it5lnmhktbsns74l3s.apps.googleusercontent.com.json', 'r').read())['web']['client_id']
 APPLICATION_NAME = "Restaurant Menu Application"
 
 
